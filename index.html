@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Enregistreur de séance</title>
+<style>
+:root{--ocean:#1E4D7A;--ochre:#B26A1F;--earth:#7A4A22;--bg:#EDF1F4;--surface:#fff;--fg:#13202E;--muted:#56657A;--line:#D3DCE5;--late:#B0362B;--late-soft:#F8E1DD;--ok:#2E7550;--ok-soft:#DFF0E5}
+@media (prefers-color-scheme:dark){:root{--ocean:#78ABDD;--ochre:#E3A45E;--earth:#D19A6A;--bg:#0E161F;--surface:#16212D;--fg:#E6ECF2;--muted:#9AA9B8;--line:#273646;--late:#F08A7E;--late-soft:#3B1E1A;--ok:#7CCB9C;--ok-soft:#173527}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{background:linear-gradient(105deg,#143A5E,#1E5C8F 70%,#7A4A22);color:#fff;padding:22px 16px}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px}
+header .wrap{padding:0}
+h1{font:800 clamp(26px,4vw,36px)/1.1 Georgia,serif;margin:4px 0 6px}
+.k{font:600 11.5px ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+header .k{color:#F2C894}
+header p{margin:0;opacity:.9;max-width:62ch}
+main{padding:20px 0 48px;display:grid;gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:grid;gap:12px}
+input,textarea{width:100%;font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 11px}
+textarea{min-height:46vh;resize:vertical;font-size:16px;line-height:1.6}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.rec{display:inline-flex;align-items:center;gap:10px;border:0;border-radius:99px;padding:14px 26px;font:700 17px inherit;font-family:inherit;cursor:pointer;background:var(--late);color:#fff;min-height:52px}
+.rec .dot{width:13px;height:13px;border-radius:50%;background:#fff}
+.rec.on{background:var(--fg);color:var(--surface)}
+.rec.on .dot{border-radius:2px;background:var(--late);animation:p 1.2s infinite}
+@keyframes p{50%{opacity:.3}}
+.tm{font:600 18px ui-monospace,Menlo,monospace;color:var(--late);font-variant-numeric:tabular-nums}
+.st{font-size:14px;color:var(--muted)}
+.st.ok{color:var(--ok)}.st.err{color:var(--late)}
+.int{min-height:1.4em;color:var(--muted);font-style:italic;font-size:15px}
+.btn{border:2px solid var(--line);background:transparent;color:var(--fg);border-radius:99px;padding:9px 18px;font:700 15px inherit;font-family:inherit;cursor:pointer}
+.btn.pri{background:var(--ocean);border-color:var(--ocean);color:#fff}
+.btn:disabled{opacity:.45;cursor:default}
+.help{font-size:14.5px;color:var(--muted)}
+.help ol{margin:4px 0 0;padding-left:20px;display:grid;gap:4px}
+.err-box{background:var(--late-soft);color:var(--late);border-radius:8px;padding:10px 12px;font-size:15px}
+.err-box[hidden]{display:none}
+</style>
+</head>
+<body>
+<header><div class="wrap"><span class="k">Pilotage · Politique</span><h1>Enregistreur de séance</h1><p>Transcription en direct de ce qui se dit. À la fin, copiez le texte dans « Séance en cours » du pilotage pour obtenir la synthèse et les points à soulever.</p></div></header>
+<main class="wrap">
+  <div class="panel">
+    <div><label class="k" for="sujet">Sujet de la séance</label><input id="sujet" placeholder="Ex. : séance plénière, projet de loi du Pays sur…"></div>
+    <div class="row"><button class="rec" id="rec"><span class="dot"></span><span id="rec-l">Enregistrer</span></button><span class="tm" id="tm"></span><span class="st" id="st">Prêt.</span></div>
+    <div class="err-box" id="err" hidden></div>
+    <div><label class="k" for="txt">Transcription</label><textarea id="txt" placeholder="La transcription s'affiche ici pendant l'enregistrement. Vous pouvez corriger le texte à tout moment."></textarea><div class="int" id="int"></div></div>
+    <div class="row"><button class="btn pri" id="copy">Copier et ouvrir le pilotage</button><button class="btn" id="save">Télécharger en .txt</button><button class="btn" id="clear">Nouvelle séance</button><span class="st" id="saved"></span></div>
+  </div>
+  <div class="panel help"><span class="k">Bon à savoir</span>
+    <ol>
+      <li>Utilisez cette page dans <b>Google Chrome</b>. Au tout premier clic sur « Enregistrer », Chrome demande l'accès au micro : choisissez « Autoriser ». Chrome s'en souvient ensuite pour cette adresse, il ne redemandera plus.</li><li>Pour l'avoir sous la main : menu ⋮ de Chrome › Caster, enregistrer et partager › Installer la page en tant qu'application (ou ajoutez-la à vos favoris).</li>
+      <li>Le texte est gardé dans ce navigateur au fil de l'eau : si la page se ferme, il est toujours là à la réouverture.</li>
+      <li>La reconnaissance vocale de Chrome passe par les serveurs de Google ; pour une réunion confidentielle, préférez la dictée du Mac.</li>
+      <li>Si Chrome refuse le micro : cliquez sur l'icône à gauche de l'adresse, puis « Micro : Autoriser », et rechargez la page. Sur Mac, vérifiez aussi Réglages Système › Confidentialité et sécurité › Microphone › Google Chrome.</li>
+    </ol>
+  </div>
+</main>
+<script>
+const PILOTAGE="https://claude.ai/code/artifact/2eaffd2c-6800-4748-85cc-f336b030be7f";
+const $=s=>document.querySelector(s);
+const K="enreg-seance-v1";
+let st={sujet:"",txt:""};
+try{st=Object.assign(st,JSON.parse(localStorage.getItem(K)||"{}"));}catch(_){}
+$("#sujet").value=st.sujet||"";$("#txt").value=st.txt||"";
+function persist(){st.sujet=$("#sujet").value;st.txt=$("#txt").value;try{localStorage.setItem(K,JSON.stringify(st));$("#saved").textContent="Enregistré dans ce navigateur";}catch(_){}}
+$("#sujet").addEventListener("input",persist);$("#txt").addEventListener("input",persist);
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null,on=false,t0=0,tick=null,quick=0,lastStart=0,wake=null;
+function status(m,c){const e=$("#st");e.textContent=m;e.className="st "+(c||"");}
+function showErr(m){const e=$("#err");e.textContent=m;e.hidden=!m;}
+function mmss(s){s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+":"+String(m).padStart(2,"0"):m)+":"+String(x).padStart(2,"0");}
+function append(t){t=t.trim();if(!t)return;const ta=$("#txt");const v=ta.value;ta.value=(v&&!/\s$/.test(v)?v+" ":v)+t;if(document.activeElement!==ta)ta.scrollTop=ta.scrollHeight;persist();}
+function ui(){$("#rec").classList.toggle("on",on);$("#rec-l").textContent=on?"Fin de l'enregistrement":"Enregistrer";}
+async function keepAwake(){try{wake=await navigator.wakeLock.request("screen");}catch(_){}}
+function startRec(){
+  rec=new SR();rec.lang="fr-FR";rec.continuous=true;rec.interimResults=true;
+  rec.onresult=e=>{quick=0;let fin="",int="";for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];if(r.isFinal)fin+=r[0].transcript;else int+=r[0].transcript;}if(fin)append(fin);$("#int").textContent=int;status("Enregistrement en cours…","ok");};
+  rec.onerror=e=>{
+    if(e.error==="not-allowed"||e.error==="service-not-allowed"){stop();showErr("Le micro a été refusé. Cliquez sur l'icône à gauche de l'adresse, choisissez « Micro : Autoriser », puis rechargez la page. Sur Mac, vérifiez aussi Réglages Système › Confidentialité et sécurité › Microphone › Google Chrome.");}
+    else if(e.error==="audio-capture"){stop();showErr("Aucun micro détecté. Vérifiez qu'un micro est branché ou activé.");}
+    else if(e.error==="network"){status("Connexion perdue, reprise…","err");}
+  };
+  rec.onend=()=>{if(!on)return;const now=Date.now();quick=(now-lastStart<1500)?quick+1:0;if(quick>5){stop();showErr("La reconnaissance vocale s'arrête sans cesse. Vérifiez la connexion internet et l'accès au micro, puis réessayez.");return;}setTimeout(()=>{if(on){try{lastStart=Date.now();rec.start();}catch(_){}}},quick?400:0);};
+  lastStart=Date.now();rec.start();
+}
+function isChrome(){const b=(navigator.userAgentData&&navigator.userAgentData.brands||[]).map(x=>x.brand).join(" ");return /Google Chrome|Chromium|Microsoft Edge/.test(b)||(/Chrome\//.test(navigator.userAgent)&&!/Edg|OPR/.test(navigator.userAgent));}
+async function start(){
+  let framed=false;try{framed=window.top!==window;}catch(_){framed=true;}
+  if(framed){showErr("Vous êtes dans l'aperçu de Claude, qui n'a pas accès au micro. Ouvrez l'adresse nuihau-maker.github.io/enregistreur-seance dans Google Chrome.");return;}
+  if(!SR||!isChrome()){showErr("Ce navigateur n'est pas Google Chrome (sur Mac, un double-clic ouvre souvent Safari). Ouvrez cette page dans Google Chrome.");return;}
+  showErr("");status("Demande d'accès au micro… cliquez « Autoriser » dans la fenêtre de Chrome.");
+  try{const s=await navigator.mediaDevices.getUserMedia({audio:true});s.getTracks().forEach(t=>t.stop());}
+  catch(e){
+    if(e&&e.name==="NotFoundError"){showErr("Aucun micro détecté. Vérifiez qu'un micro est branché ou activé.");}
+    else{showErr("Chrome bloque le micro pour cette page. 1) Cliquez sur l'icône à gauche de l'adresse (cadenas ou réglages), mettez « Micro » sur « Autoriser », puis rechargez la page. 2) Sur Mac, vérifiez Réglages Système › Confidentialité et sécurité › Microphone : « Google Chrome » doit être coché (puis quittez et rouvrez Chrome).");}
+    status("Micro non autorisé.","err");return;
+  }
+  on=true;quick=0;t0=Date.now();ui();status("Enregistrement en cours… parlez normalement.","ok");
+  try{startRec();}catch(e){on=false;ui();showErr("Impossible de démarrer l'enregistrement : "+(e.message||e));return;}
+  tick=setInterval(()=>{$("#tm").textContent=mmss((Date.now()-t0)/1000);},1000);keepAwake();
+}
+function stop(){
+  on=false;try{rec&&rec.stop();}catch(_){}
+  const i=$("#int").textContent;if(i)append(i);$("#int").textContent="";
+  clearInterval(tick);ui();status("Enregistrement terminé. Copiez le texte dans le pilotage pour l'analyse.","ok");
+  try{wake&&wake.release();}catch(_){}wake=null;persist();
+}
+$("#rec").addEventListener("click",()=>on?stop():start());
+document.addEventListener("visibilitychange",()=>{if(on&&document.visibilityState==="visible")keepAwake();});
+$("#copy").addEventListener("click",async()=>{
+  if(on)stop();
+  const s=$("#sujet").value.trim(),t=$("#txt").value.trim();
+  if(!t){status("Rien à copier pour l'instant.","err");return;}
+  const out=(s?"Sujet : "+s+"\n\n":"")+t;
+  try{await navigator.clipboard.writeText(out);}catch(_){const ta=$("#txt");ta.focus();ta.select();document.execCommand("copy");}
+  status("Texte copié. Dans le pilotage : Politique › Séance en cours, collez-le (⌘V) puis « Analyser ce texte ».","ok");
+  window.open(PILOTAGE,"_blank");
+});
+$("#save").addEventListener("click",()=>{
+  const s=$("#sujet").value.trim(),t=$("#txt").value;
+  const d=new Date(),n="seance-"+d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")+".txt";
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([(s?"Sujet : "+s+"\n\n":"")+t],{type:"text/plain;charset=utf-8"}));a.download=n;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+});
+let armed=false;
+$("#clear").addEventListener("click",e=>{
+  if(!armed){armed=true;e.target.textContent="Effacer le texte ?";setTimeout(()=>{armed=false;e.target.textContent="Nouvelle séance";},4000);return;}
+  if(on)stop();armed=false;e.target.textContent="Nouvelle séance";$("#txt").value="";$("#sujet").value="";$("#tm").textContent="";persist();status("Prêt.");
+});
+</script>
+</body>
+</html>
