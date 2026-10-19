@@ -80,7 +80,7 @@ textarea{min-height:42vh;resize:vertical;font-size:16px;line-height:1.6}
   <div class="panel help"><span class="k">Bon à savoir</span>
     <ol>
       <li>Utilisez cette page dans <b>Google Chrome</b>. Au tout premier clic sur « Enregistrer », Chrome demande l'accès au micro : choisissez « Autoriser ». Chrome s'en souvient ensuite pour cette adresse.</li>
-      <li><b>Sur l'ordinateur</b> : la transcription se fait sur votre Mac, sans envoyer le son à personne. La première fois, le moteur (80 à 200 Mo selon votre Mac) se télécharge, puis il reste en mémoire dans Chrome. Le texte arrive par paquets, toutes les 15 secondes environ.</li>
+      <li><b>Sur l'ordinateur</b> : la transcription se fait sur votre Mac, sans envoyer le son à personne. La première fois, le moteur (jusqu'à 600 Mo selon votre Mac) se télécharge, puis il reste en mémoire dans Chrome. Le texte arrive par paquets, toutes les 20 secondes environ.</li>
       <li><b>En direct par Google</b> : le texte s'affiche mot à mot, mais le son part sur les serveurs de Google, et ce service ne fonctionne pas toujours (connexion, navigateurs autres que Chrome). Si rien ne s'affiche, la page repasse d'elle-même sur l'ordinateur.</li>
       <li>Le texte est gardé dans ce navigateur au fil de l'eau : si la page se ferme, il est toujours là à la réouverture.</li>
       <li>Pour l'avoir sous la main : menu ⋮ de Chrome › Caster, enregistrer et partager › Installer la page en tant qu'application.</li>
@@ -99,7 +99,7 @@ $("#sujet").addEventListener("input",persist);$("#txt").addEventListener("input"
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 let engine=st.eng==="google"&&SR?"google":"local";
 function setEngineUI(){document.querySelectorAll("input[name=eng]").forEach(r=>{r.checked=r.value===engine;r.disabled=on;});
-  $("#eng-help").textContent=engine==="local"?"Le son reste sur votre Mac. Texte par paquets d'environ 15 secondes.":"Texte mot à mot ; le son passe par Google. Bascule automatique sur l'ordinateur si rien ne s'affiche.";}
+  $("#eng-help").textContent=engine==="local"?"Le son reste sur votre Mac. Texte par paquets d'environ 20 secondes.":"Texte mot à mot ; le son passe par Google. Bascule automatique sur l'ordinateur si rien ne s'affiche.";}
 document.querySelectorAll("input[name=eng]").forEach(r=>r.addEventListener("change",()=>{engine=r.value;st.eng=engine;persist();setEngineUI();}));
 
 let on=false,t0=0,tick=null,wake=null,stream=null,actx=null,analyser=null,raf=null,lastSound=0,soundSince=0;
@@ -150,13 +150,21 @@ async function load(){
   loading=(async()=>{
     const T=await import("https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1");
     T.env.allowLocalModels=false;
-    let device="wasm";try{if(navigator.gpu&&await navigator.gpu.requestAdapter())device="webgpu";}catch(_){}
+    let gpu=null;try{if(navigator.gpu)gpu=await navigator.gpu.requestAdapter();}catch(_){}
     const files={};
     const progress_callback=p=>{if(p.status==="progress"&&p.total){files[p.file]=[p.loaded,p.total];let a=0,b=0;for(const k in files){a+=files[k][0];b+=files[k][1];}postMessage({type:"progress",pct:Math.round(a/b*100),mb:Math.round(b/1048576)});}};
-    const opts=device==="webgpu"?{device,dtype:{encoder_model:"fp32",decoder_model_merged:"q4"},progress_callback}:{device,dtype:"q8",progress_callback};
-    try{asr=await T.pipeline("automatic-speech-recognition","onnx-community/whisper-base",opts);}
-    catch(e){if(device==="webgpu"){device="wasm";asr=await T.pipeline("automatic-speech-recognition","onnx-community/whisper-base",{device,dtype:"q8",progress_callback});}else throw e;}
-    postMessage({type:"ready",device});return asr;})();
+    const plans=[];
+    if(gpu&&gpu.features&&gpu.features.has("shader-f16"))plans.push(["onnx-community/whisper-large-v3-turbo",{device:"webgpu",dtype:{encoder_model:"q4f16",decoder_model_merged:"q4f16"}},"haute qualité"]);
+    if(gpu)plans.push(["onnx-community/whisper-small",{device:"webgpu",dtype:{encoder_model:"fp32",decoder_model_merged:"q4"}},"qualité moyenne"]);
+    plans.push(["onnx-community/whisper-small",{device:"wasm",dtype:"q8"},"qualité moyenne (processeur)"]);
+    plans.push(["onnx-community/whisper-base",{device:"wasm",dtype:"q8"},"qualité de base"]);
+    let lastErr=null,device="",label="";
+    for(const [model,o,lab] of plans){
+      try{for(const k in files)delete files[k];asr=await T.pipeline("automatic-speech-recognition",model,Object.assign({progress_callback},o));device=o.device;label=lab;break;}
+      catch(e){lastErr=e;asr=null;}
+    }
+    if(!asr)throw lastErr||new Error("aucun moteur disponible");
+    postMessage({type:"ready",device,label});return asr;})();
   return loading;
 }
 onmessage=async e=>{
@@ -167,13 +175,13 @@ onmessage=async e=>{
   }catch(err){postMessage({type:"error",id:m.id,message:String(err&&err.message||err)});}
 };`;
 let worker=null,ready=false,device="",queue=0,pcm=[],pcmLen=0,node=null,chunkTimer=null,lid=0;
-const CHUNK_S=15,RATE=16000;
+const CHUNK_S=20,RATE=16000;
 function ensureWorker(){
   if(worker)return worker;
   worker=new Worker(URL.createObjectURL(new Blob([WORKER_SRC],{type:"text/javascript"})),{type:"module"});
   worker.onmessage=e=>{const m=e.data;
     if(m.type==="progress"){const ib=$("#dl");ib.hidden=false;$("#dl-t").textContent="Téléchargement du moteur de transcription, une seule fois ("+m.mb+" Mo) : "+m.pct+" %";$("#dl-p").style.width=m.pct+"%";}
-    else if(m.type==="ready"){ready=true;device=m.device;$("#dl").hidden=true;diag("d-tr",true,"Moteur prêt sur l'ordinateur ("+(device==="webgpu"?"carte graphique":"processeur")+")");if(!on)status("Moteur prêt.","ok");}
+    else if(m.type==="ready"){ready=true;device=m.device;$("#dl").hidden=true;diag("d-tr",true,"Moteur prêt : "+(m.label||"")+" ("+(device==="webgpu"?"carte graphique":"processeur")+")");if(!on)status("Moteur prêt.","ok");}
     else if(m.type==="text"){queue--;append(m.text);diag("d-tr",true,queue>0?"Transcription… ("+queue+" paquet"+(queue>1?"s":"")+" en attente)":"À jour");if(!on&&queue===0)status("Transcription terminée. Copiez le texte dans le pilotage pour l'analyse.","ok");}
     else if(m.type==="error"){if(m.id)queue--;if(!on)status("La transcription n'a pas pu se faire.","err");diag("d-tr",false,"Erreur du moteur");showErr("Le moteur de transcription sur l'ordinateur n'a pas pu fonctionner : "+m.message+". Vérifiez la connexion internet pour le premier téléchargement, ou choisissez « En direct par Google ».");}
   };
