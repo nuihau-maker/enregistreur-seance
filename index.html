@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Enregistreur de séance</title>
 <style>
-:root{--ocean:#1E4D7A;--ochre:#B26A1F;--earth:#7A4A22;--bg:#EDF1F4;--surface:#fff;--fg:#13202E;--muted:#56657A;--line:#D3DCE5;--late:#B0362B;--late-soft:#F8E1DD;--ok:#2E7550;--ok-soft:#DFF0E5}
-@media (prefers-color-scheme:dark){:root{--ocean:#78ABDD;--ochre:#E3A45E;--earth:#D19A6A;--bg:#0E161F;--surface:#16212D;--fg:#E6ECF2;--muted:#9AA9B8;--line:#273646;--late:#F08A7E;--late-soft:#3B1E1A;--ok:#7CCB9C;--ok-soft:#173527}}
+:root{--ocean:#1E4D7A;--ochre:#B26A1F;--earth:#7A4A22;--bg:#EDF1F4;--surface:#fff;--fg:#13202E;--muted:#56657A;--line:#D3DCE5;--late:#B0362B;--late-soft:#F8E1DD;--ok:#2E7550;--ok-soft:#DFF0E5;--sky:#DCE7F1}
+@media (prefers-color-scheme:dark){:root{--ocean:#78ABDD;--ochre:#E3A45E;--earth:#D19A6A;--bg:#0E161F;--surface:#16212D;--fg:#E6ECF2;--muted:#9AA9B8;--line:#273646;--late:#F08A7E;--late-soft:#3B1E1A;--ok:#7CCB9C;--ok-soft:#173527;--sky:#1A2938}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 header{background:linear-gradient(105deg,#143A5E,#1E5C8F 70%,#7A4A22);color:#fff;padding:22px 16px}
@@ -18,8 +18,8 @@ header .k{color:#F2C894}
 header p{margin:0;opacity:.9;max-width:62ch}
 main{padding:20px 0 48px;display:grid;gap:16px}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:grid;gap:12px}
-input,textarea{width:100%;font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 11px}
-textarea{min-height:46vh;resize:vertical;font-size:16px;line-height:1.6}
+input,textarea,select{width:100%;font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 11px}
+textarea{min-height:42vh;resize:vertical;font-size:16px;line-height:1.6}
 .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
 .rec{display:inline-flex;align-items:center;gap:10px;border:0;border-radius:99px;padding:14px 26px;font:700 17px inherit;font-family:inherit;cursor:pointer;background:var(--late);color:#fff;min-height:52px}
 .rec .dot{width:13px;height:13px;border-radius:50%;background:#fff}
@@ -32,29 +32,58 @@ textarea{min-height:46vh;resize:vertical;font-size:16px;line-height:1.6}
 .int{min-height:1.4em;color:var(--muted);font-style:italic;font-size:15px}
 .btn{border:2px solid var(--line);background:transparent;color:var(--fg);border-radius:99px;padding:9px 18px;font:700 15px inherit;font-family:inherit;cursor:pointer}
 .btn.pri{background:var(--ocean);border-color:var(--ocean);color:#fff}
+.btn.sm{padding:6px 14px;font-size:14px}
 .btn:disabled{opacity:.45;cursor:default}
 .help{font-size:14.5px;color:var(--muted)}
 .help ol{margin:4px 0 0;padding-left:20px;display:grid;gap:4px}
 .err-box{background:var(--late-soft);color:var(--late);border-radius:8px;padding:10px 12px;font-size:15px}
-.err-box[hidden]{display:none}
+.info-box{background:var(--sky);border-radius:8px;padding:10px 12px;font-size:15px}
+[hidden]{display:none!important}
+.diag{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.diag div{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;gap:4px;min-width:0}
+.diag b{font-size:14px}
+.diag span{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.diag .ok b{color:var(--ok)}.diag .bad b{color:var(--late)}
+.meter{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:var(--ok);transition:width .1s}
+@media (max-width:640px){.diag{grid-template-columns:1fr}}
+.eng{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.eng label{display:flex;gap:6px;align-items:center;font-size:15px;cursor:pointer;background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:6px 12px}
+.eng input{width:auto;margin:0}
+.prog{height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--ocean)}
 </style>
 </head>
 <body>
-<header><div class="wrap"><span class="k">Pilotage · Politique</span><h1>Enregistreur de séance</h1><p>Transcription en direct de ce qui se dit. À la fin, copiez le texte dans « Séance en cours » du pilotage pour obtenir la synthèse et les points à soulever.</p></div></header>
+<header><div class="wrap"><span class="k">Pilotage · Politique</span><h1>Enregistreur de séance</h1><p>Transcription de ce qui se dit. À la fin, copiez le texte dans « Séance en cours » du pilotage pour obtenir la synthèse et les points à soulever.</p></div></header>
 <main class="wrap">
   <div class="panel">
     <div><label class="k" for="sujet">Sujet de la séance</label><input id="sujet" placeholder="Ex. : séance plénière, projet de loi du Pays sur…"></div>
+    <div><span class="k">Transcription</span>
+      <div class="eng" role="radiogroup" aria-label="Moteur de transcription">
+        <label><input type="radio" name="eng" value="local"> Sur l'ordinateur (recommandé)</label>
+        <label><input type="radio" name="eng" value="google"> En direct par Google</label>
+      </div>
+      <p class="st" id="eng-help"></p>
+    </div>
     <div class="row"><button class="rec" id="rec"><span class="dot"></span><span id="rec-l">Enregistrer</span></button><span class="tm" id="tm"></span><span class="st" id="st">Prêt.</span></div>
+    <div class="diag" id="diag" hidden>
+      <div id="d-mic"><b>Micro</b><span>—</span></div>
+      <div id="d-son"><b>Son capté</b><div class="meter"><i id="lvl"></i></div><span>—</span></div>
+      <div id="d-tr"><b>Transcription</b><span>—</span></div>
+    </div>
+    <div class="info-box" id="dl" hidden><span id="dl-t">Préparation du moteur…</span><div class="prog"><i id="dl-p"></i></div></div>
     <div class="err-box" id="err" hidden></div>
-    <div><label class="k" for="txt">Transcription</label><textarea id="txt" placeholder="La transcription s'affiche ici pendant l'enregistrement. Vous pouvez corriger le texte à tout moment."></textarea><div class="int" id="int"></div></div>
+    <div><label class="k" for="txt">Texte</label><textarea id="txt" placeholder="Le texte s'affiche ici pendant l'enregistrement. Vous pouvez le corriger à tout moment."></textarea><div class="int" id="int"></div></div>
     <div class="row"><button class="btn pri" id="copy">Copier et ouvrir le pilotage</button><button class="btn" id="save">Télécharger en .txt</button><button class="btn" id="clear">Nouvelle séance</button><span class="st" id="saved"></span></div>
   </div>
   <div class="panel help"><span class="k">Bon à savoir</span>
     <ol>
-      <li>Utilisez cette page dans <b>Google Chrome</b>. Au tout premier clic sur « Enregistrer », Chrome demande l'accès au micro : choisissez « Autoriser ». Chrome s'en souvient ensuite pour cette adresse, il ne redemandera plus.</li><li>Pour l'avoir sous la main : menu ⋮ de Chrome › Caster, enregistrer et partager › Installer la page en tant qu'application (ou ajoutez-la à vos favoris).</li>
+      <li>Utilisez cette page dans <b>Google Chrome</b>. Au tout premier clic sur « Enregistrer », Chrome demande l'accès au micro : choisissez « Autoriser ». Chrome s'en souvient ensuite pour cette adresse.</li>
+      <li><b>Sur l'ordinateur</b> : la transcription se fait sur votre Mac, sans envoyer le son à personne. La première fois, le moteur (80 à 200 Mo selon votre Mac) se télécharge, puis il reste en mémoire dans Chrome. Le texte arrive par paquets, toutes les 15 secondes environ.</li>
+      <li><b>En direct par Google</b> : le texte s'affiche mot à mot, mais le son part sur les serveurs de Google, et ce service ne fonctionne pas toujours (connexion, navigateurs autres que Chrome). Si rien ne s'affiche, la page repasse d'elle-même sur l'ordinateur.</li>
       <li>Le texte est gardé dans ce navigateur au fil de l'eau : si la page se ferme, il est toujours là à la réouverture.</li>
-      <li>La reconnaissance vocale de Chrome passe par les serveurs de Google ; pour une réunion confidentielle, préférez la dictée du Mac.</li>
-      <li>Si Chrome refuse le micro : cliquez sur l'icône à gauche de l'adresse, puis « Micro : Autoriser », et rechargez la page. Sur Mac, vérifiez aussi Réglages Système › Confidentialité et sécurité › Microphone › Google Chrome.</li>
+      <li>Pour l'avoir sous la main : menu ⋮ de Chrome › Caster, enregistrer et partager › Installer la page en tant qu'application.</li>
     </ol>
   </div>
 </main>
@@ -62,50 +91,152 @@ textarea{min-height:46vh;resize:vertical;font-size:16px;line-height:1.6}
 const PILOTAGE="https://claude.ai/code/artifact/2eaffd2c-6800-4748-85cc-f336b030be7f";
 const $=s=>document.querySelector(s);
 const K="enreg-seance-v1";
-let st={sujet:"",txt:""};
+let st={sujet:"",txt:"",eng:"local"};
 try{st=Object.assign(st,JSON.parse(localStorage.getItem(K)||"{}"));}catch(_){}
 $("#sujet").value=st.sujet||"";$("#txt").value=st.txt||"";
 function persist(){st.sujet=$("#sujet").value;st.txt=$("#txt").value;try{localStorage.setItem(K,JSON.stringify(st));$("#saved").textContent="Enregistré dans ce navigateur";}catch(_){}}
 $("#sujet").addEventListener("input",persist);$("#txt").addEventListener("input",persist);
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-let rec=null,on=false,t0=0,tick=null,quick=0,lastStart=0,wake=null;
+let engine=st.eng==="google"&&SR?"google":"local";
+function setEngineUI(){document.querySelectorAll("input[name=eng]").forEach(r=>{r.checked=r.value===engine;r.disabled=on;});
+  $("#eng-help").textContent=engine==="local"?"Le son reste sur votre Mac. Texte par paquets d'environ 15 secondes.":"Texte mot à mot ; le son passe par Google. Bascule automatique sur l'ordinateur si rien ne s'affiche.";}
+document.querySelectorAll("input[name=eng]").forEach(r=>r.addEventListener("change",()=>{engine=r.value;st.eng=engine;persist();setEngineUI();}));
+
+let on=false,t0=0,tick=null,wake=null,stream=null,actx=null,analyser=null,raf=null,lastSound=0,soundSince=0;
 function status(m,c){const e=$("#st");e.textContent=m;e.className="st "+(c||"");}
-function showErr(m){const e=$("#err");e.textContent=m;e.hidden=!m;}
+function showErr(m){const e=$("#err");e.textContent=m||"";e.hidden=!m;}
+function diag(id,ok,txt){const d=$("#"+id);d.className=ok===true?"ok":ok===false?"bad":"";d.querySelector("span:last-child").textContent=txt;}
 function mmss(s){s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+":"+String(m).padStart(2,"0"):m)+":"+String(x).padStart(2,"0");}
-function append(t){t=t.trim();if(!t)return;const ta=$("#txt");const v=ta.value;ta.value=(v&&!/\s$/.test(v)?v+" ":v)+t;if(document.activeElement!==ta)ta.scrollTop=ta.scrollHeight;persist();}
-function ui(){$("#rec").classList.toggle("on",on);$("#rec-l").textContent=on?"Fin de l'enregistrement":"Enregistrer";}
+function append(t){t=(t||"").trim();if(!t)return;const ta=$("#txt");const v=ta.value;ta.value=(v&&!/\s$/.test(v)?v+" ":v)+t;if(document.activeElement!==ta)ta.scrollTop=ta.scrollHeight;persist();}
+function ui(){$("#rec").classList.toggle("on",on);$("#rec-l").textContent=on?"Fin de l'enregistrement":"Enregistrer";setEngineUI();}
 async function keepAwake(){try{wake=await navigator.wakeLock.request("screen");}catch(_){}}
-function startRec(){
-  rec=new SR();rec.lang="fr-FR";rec.continuous=true;rec.interimResults=true;
-  rec.onresult=e=>{quick=0;let fin="",int="";for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];if(r.isFinal)fin+=r[0].transcript;else int+=r[0].transcript;}if(fin)append(fin);$("#int").textContent=int;status("Enregistrement en cours…","ok");};
-  rec.onerror=e=>{
-    if(e.error==="not-allowed"||e.error==="service-not-allowed"){stop();showErr("Le micro a été refusé. Cliquez sur l'icône à gauche de l'adresse, choisissez « Micro : Autoriser », puis rechargez la page. Sur Mac, vérifiez aussi Réglages Système › Confidentialité et sécurité › Microphone › Google Chrome.");}
-    else if(e.error==="audio-capture"){stop();showErr("Aucun micro détecté. Vérifiez qu'un micro est branché ou activé.");}
-    else if(e.error==="network"){status("Connexion perdue, reprise…","err");}
-  };
-  rec.onend=()=>{if(!on)return;const now=Date.now();quick=(now-lastStart<1500)?quick+1:0;if(quick>5){stop();showErr("La reconnaissance vocale s'arrête sans cesse. Vérifiez la connexion internet et l'accès au micro, puis réessayez.");return;}setTimeout(()=>{if(on){try{lastStart=Date.now();rec.start();}catch(_){}}},quick?400:0);};
-  lastStart=Date.now();rec.start();
+
+/* ---------- Niveau du micro ---------- */
+function startMeter(){
+  analyser=actx.createAnalyser();analyser.fftSize=1024;actx.createMediaStreamSource(stream).connect(analyser);
+  const buf=new Float32Array(analyser.fftSize);
+  const loop=()=>{analyser.getFloatTimeDomainData(buf);let s=0;for(let i=0;i<buf.length;i++)s+=buf[i]*buf[i];const rms=Math.sqrt(s/buf.length);
+    const pct=Math.min(100,Math.round(rms*600));$("#lvl").style.width=pct+"%";
+    if(pct>6){lastSound=Date.now();if(!soundSince)soundSince=lastSound;diag("d-son",true,"Oui, le micro entend");}
+    else if(Date.now()-lastSound>6000)diag("d-son",lastSound?null:false,lastSound?"Silence":"Aucun son pour l'instant : parlez, ou vérifiez le micro choisi (icône micro dans la barre d'adresse)");
+    raf=requestAnimationFrame(loop);};
+  loop();
 }
-function isChrome(){const b=(navigator.userAgentData&&navigator.userAgentData.brands||[]).map(x=>x.brand).join(" ");return /Google Chrome|Chromium|Microsoft Edge/.test(b)||(/Chrome\//.test(navigator.userAgent)&&!/Edg|OPR/.test(navigator.userAgent));}
+
+/* ---------- Moteur Google (en direct) ---------- */
+let rec=null,gotResult=0,gErr="",gWatch=null,quick=0,lastStart=0;
+function startGoogle(){
+  gotResult=0;gErr="";quick=0;
+  rec=new SR();rec.lang="fr-FR";rec.continuous=true;rec.interimResults=true;
+  rec.onstart=()=>diag("d-tr",null,"Google démarré, en attente de parole…");
+  rec.onresult=e=>{gotResult=Date.now();quick=0;let fin="",int="";for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];if(r.isFinal)fin+=r[0].transcript;else int+=r[0].transcript;}if(fin)append(fin);$("#int").textContent=int;diag("d-tr",true,"Google transcrit");};
+  rec.onerror=e=>{gErr=e.error;diag("d-tr",false,"Google : erreur « "+e.error+" »");if(e.error==="not-allowed"||e.error==="service-not-allowed"||e.error==="network")switchToLocal("La transcription Google ne répond pas (« "+e.error+" »).");};
+  rec.onend=()=>{if(!on||engine!=="google")return;const now=Date.now();quick=(now-lastStart<1500)?quick+1:0;if(quick>4){switchToLocal("La transcription Google s'arrête sans cesse.");return;}setTimeout(()=>{if(on&&engine==="google"){try{lastStart=Date.now();rec.start();}catch(_){}}},quick?400:0);};
+  lastStart=Date.now();rec.start();
+  gWatch=setInterval(()=>{if(!on||engine!=="google")return;if(soundSince&&Date.now()-soundSince>9000&&(!gotResult||Date.now()-gotResult>45000)&&Date.now()-lastSound<3000)switchToLocal("Le micro entend bien, mais Google ne renvoie aucun texte"+(gErr?" (« "+gErr+" »)":"")+".");},2000);
+}
+function stopGoogle(){clearInterval(gWatch);gWatch=null;const r=rec;rec=null;try{r&&r.abort();}catch(_){}const i=$("#int").textContent;if(i)append(i);$("#int").textContent="";}
+function switchToLocal(why){
+  if(engine!=="google")return;stopGoogle();engine="local";st.eng="local";persist();setEngineUI();
+  $("#err").hidden=true;const ib=$("#dl");ib.hidden=false;$("#dl-t").textContent=why+" Bascule sur la transcription sur l'ordinateur.";
+  startLocal();
+}
+
+/* ---------- Moteur local (Whisper dans Chrome) ---------- */
+const WORKER_SRC=`
+let asr=null,loading=null;
+async function load(){
+  if(asr)return asr;if(loading)return loading;
+  loading=(async()=>{
+    const T=await import("https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1");
+    T.env.allowLocalModels=false;
+    let device="wasm";try{if(navigator.gpu&&await navigator.gpu.requestAdapter())device="webgpu";}catch(_){}
+    const files={};
+    const progress_callback=p=>{if(p.status==="progress"&&p.total){files[p.file]=[p.loaded,p.total];let a=0,b=0;for(const k in files){a+=files[k][0];b+=files[k][1];}postMessage({type:"progress",pct:Math.round(a/b*100),mb:Math.round(b/1048576)});}};
+    const opts=device==="webgpu"?{device,dtype:{encoder_model:"fp32",decoder_model_merged:"q4"},progress_callback}:{device,dtype:"q8",progress_callback};
+    try{asr=await T.pipeline("automatic-speech-recognition","onnx-community/whisper-base",opts);}
+    catch(e){if(device==="webgpu"){device="wasm";asr=await T.pipeline("automatic-speech-recognition","onnx-community/whisper-base",{device,dtype:"q8",progress_callback});}else throw e;}
+    postMessage({type:"ready",device});return asr;})();
+  return loading;
+}
+onmessage=async e=>{
+  const m=e.data;
+  try{
+    if(m.type==="load"){await load();return;}
+    if(m.type==="tr"){const a=await load();const out=await a(m.audio,{language:"french",task:"transcribe",chunk_length_s:30,stride_length_s:5});postMessage({type:"text",id:m.id,text:(out&&out.text)||""});}
+  }catch(err){postMessage({type:"error",id:m.id,message:String(err&&err.message||err)});}
+};`;
+let worker=null,ready=false,device="",queue=0,pcm=[],pcmLen=0,node=null,chunkTimer=null,lid=0;
+const CHUNK_S=15,RATE=16000;
+function ensureWorker(){
+  if(worker)return worker;
+  worker=new Worker(URL.createObjectURL(new Blob([WORKER_SRC],{type:"text/javascript"})),{type:"module"});
+  worker.onmessage=e=>{const m=e.data;
+    if(m.type==="progress"){const ib=$("#dl");ib.hidden=false;$("#dl-t").textContent="Téléchargement du moteur de transcription, une seule fois ("+m.mb+" Mo) : "+m.pct+" %";$("#dl-p").style.width=m.pct+"%";}
+    else if(m.type==="ready"){ready=true;device=m.device;$("#dl").hidden=true;diag("d-tr",true,"Moteur prêt sur l'ordinateur ("+(device==="webgpu"?"carte graphique":"processeur")+")");if(!on)status("Moteur prêt.","ok");}
+    else if(m.type==="text"){queue--;append(m.text);diag("d-tr",true,queue>0?"Transcription… ("+queue+" paquet"+(queue>1?"s":"")+" en attente)":"À jour");if(!on&&queue===0)status("Transcription terminée. Copiez le texte dans le pilotage pour l'analyse.","ok");}
+    else if(m.type==="error"){if(m.id)queue--;if(!on)status("La transcription n'a pas pu se faire.","err");diag("d-tr",false,"Erreur du moteur");showErr("Le moteur de transcription sur l'ordinateur n'a pas pu fonctionner : "+m.message+". Vérifiez la connexion internet pour le premier téléchargement, ou choisissez « En direct par Google ».");}
+  };
+  worker.onerror=e=>{showErr("Le moteur de transcription n'a pas pu démarrer dans ce navigateur ("+(e.message||"erreur")+"). Utilisez une version récente de Google Chrome.");};
+  worker.postMessage({type:"load"});
+  return worker;
+}
+const WORKLET=`class C extends AudioWorkletProcessor{process(i){const c=i[0]&&i[0][0];if(c)this.port.postMessage(c.slice(0));return true}}registerProcessor("cap",C);`;
+async function startLocal(){
+  ensureWorker();
+  if(!ready){diag("d-tr",null,"Préparation du moteur… le son est déjà enregistré");}
+  pcm=[];pcmLen=0;
+  const src=actx.createMediaStreamSource(stream),mute=actx.createGain();mute.gain.value=0;
+  try{
+    await actx.audioWorklet.addModule(URL.createObjectURL(new Blob([WORKLET],{type:"text/javascript"})));
+    node=new AudioWorkletNode(actx,"cap");
+    node.port.onmessage=e=>{if(!on||engine!=="local")return;pcm.push(e.data);pcmLen+=e.data.length;};
+  }catch(_){
+    node=actx.createScriptProcessor(4096,1,1);
+    node.onaudioprocess=e=>{if(!on||engine!=="local")return;const c=e.inputBuffer.getChannelData(0).slice(0);pcm.push(c);pcmLen+=c.length;};
+  }
+  src.connect(node);node.connect(mute).connect(actx.destination);
+  chunkTimer=setInterval(()=>{if(pcmLen>=CHUNK_S*actx.sampleRate)flush();},1000);
+}
+function resample(data,from){if(from===RATE)return data;const r=from/RATE,n=Math.floor(data.length/r),o=new Float32Array(n);for(let i=0;i<n;i++){const x=i*r,a=Math.floor(x),f=x-a;o[i]=data[a]*(1-f)+(data[a+1]||0)*f;}return o;}
+function flush(){
+  if(!pcmLen)return;const all=new Float32Array(pcmLen);let o=0;for(const p of pcm){all.set(p,o);o+=p.length;}pcm=[];pcmLen=0;
+  let s=0;for(let i=0;i<all.length;i+=50)s+=Math.abs(all[i]);if(s/(all.length/50)<0.002)return; /* silence */
+  queue++;diag("d-tr",null,ready?"Transcription… ("+queue+" paquet"+(queue>1?"s":"")+" en attente)":"Préparation du moteur… "+queue+" paquet"+(queue>1?"s":"")+" en attente");
+  worker.postMessage({type:"tr",id:++lid,audio:resample(all,actx.sampleRate)});
+}
+function stopLocal(){clearInterval(chunkTimer);chunkTimer=null;flush();try{node&&node.disconnect();}catch(_){}node=null;}
+
+/* ---------- Démarrer / arrêter ---------- */
+function isChrome(){const b=(navigator.userAgentData&&navigator.userAgentData.brands||[]).map(x=>x.brand).join(" ");return /Google Chrome|Microsoft Edge/.test(b)||(/Chrome\//.test(navigator.userAgent)&&!/Edg|OPR|Brave|Arc/.test(navigator.userAgent)&&!b);}
 async function start(){
   let framed=false;try{framed=window.top!==window;}catch(_){framed=true;}
   if(framed){showErr("Vous êtes dans l'aperçu de Claude, qui n'a pas accès au micro. Ouvrez l'adresse nuihau-maker.github.io/enregistreur-seance dans Google Chrome.");return;}
-  if(!SR||!isChrome()){showErr("Ce navigateur n'est pas Google Chrome (sur Mac, un double-clic ouvre souvent Safari). Ouvrez cette page dans Google Chrome.");return;}
-  showErr("");status("Demande d'accès au micro… cliquez « Autoriser » dans la fenêtre de Chrome.");
-  try{const s=await navigator.mediaDevices.getUserMedia({audio:true});s.getTracks().forEach(t=>t.stop());}
+  if(engine==="google"&&(!SR||!isChrome())){engine="local";setEngineUI();}
+  showErr("");$("#diag").hidden=false;diag("d-mic",null,"Demande d'accès…");status("Demande d'accès au micro… cliquez « Autoriser » si Chrome le demande.");
+  try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:true,autoGainControl:true}});}
   catch(e){
-    if(e&&e.name==="NotFoundError"){showErr("Aucun micro détecté. Vérifiez qu'un micro est branché ou activé.");}
-    else{showErr("Chrome bloque le micro pour cette page. 1) Cliquez sur l'icône à gauche de l'adresse (cadenas ou réglages), mettez « Micro » sur « Autoriser », puis rechargez la page. 2) Sur Mac, vérifiez Réglages Système › Confidentialité et sécurité › Microphone : « Google Chrome » doit être coché (puis quittez et rouvrez Chrome).");}
+    diag("d-mic",false,e&&e.name==="NotFoundError"?"Aucun micro détecté":"Refusé");
+    if(e&&e.name==="NotFoundError")showErr("Aucun micro détecté. Vérifiez qu'un micro est branché ou activé.");
+    else showErr("Chrome bloque le micro pour cette page. 1) Cliquez sur l'icône à gauche de l'adresse, mettez « Micro » sur « Autoriser », puis rechargez la page. 2) Sur Mac, vérifiez Réglages Système › Confidentialité et sécurité › Microphone : « Google Chrome » doit être coché (puis quittez et rouvrez Chrome).");
     status("Micro non autorisé.","err");return;
   }
-  on=true;quick=0;t0=Date.now();ui();status("Enregistrement en cours… parlez normalement.","ok");
-  try{startRec();}catch(e){on=false;ui();showErr("Impossible de démarrer l'enregistrement : "+(e.message||e));return;}
+  const tr=stream.getAudioTracks()[0];diag("d-mic",true,tr?tr.label||"Autorisé":"Autorisé");
+  actx=new (window.AudioContext||window.webkitAudioContext)();try{await actx.resume();}catch(_){}
+  lastSound=0;soundSince=0;startMeter();
+  on=true;t0=Date.now();ui();status("Enregistrement en cours…","ok");
+  try{if(engine==="google")startGoogle();else await startLocal();}
+  catch(e){showErr("Impossible de démarrer la transcription : "+(e.message||e));}
   tick=setInterval(()=>{$("#tm").textContent=mmss((Date.now()-t0)/1000);},1000);keepAwake();
 }
 function stop(){
-  on=false;try{rec&&rec.stop();}catch(_){}
-  const i=$("#int").textContent;if(i)append(i);$("#int").textContent="";
-  clearInterval(tick);ui();status("Enregistrement terminé. Copiez le texte dans le pilotage pour l'analyse.","ok");
+  if(!on)return;
+  if(engine==="google")stopGoogle();else stopLocal();
+  on=false;clearInterval(tick);cancelAnimationFrame(raf);$("#lvl").style.width="0";
+  try{stream&&stream.getTracks().forEach(t=>t.stop());}catch(_){}stream=null;
+  setTimeout(()=>{try{actx&&actx.close();}catch(_){}actx=null;},300);
+  ui();
+  status(queue>0?"Enregistrement terminé. Fin de la transcription en cours…":"Enregistrement terminé. Copiez le texte dans le pilotage pour l'analyse.","ok");
   try{wake&&wake.release();}catch(_){}wake=null;persist();
 }
 $("#rec").addEventListener("click",()=>on?stop():start());
@@ -129,6 +260,9 @@ $("#clear").addEventListener("click",e=>{
   if(!armed){armed=true;e.target.textContent="Effacer le texte ?";setTimeout(()=>{armed=false;e.target.textContent="Nouvelle séance";},4000);return;}
   if(on)stop();armed=false;e.target.textContent="Nouvelle séance";$("#txt").value="";$("#sujet").value="";$("#tm").textContent="";persist();status("Prêt.");
 });
+setEngineUI();
+/* Prépare le moteur local dès l'ouverture, pour que le premier téléchargement se fasse avant la séance */
+if(engine==="local"&&!/[?&]nopreload/.test(location.search)){try{ensureWorker();}catch(_){}}
 </script>
 </body>
 </html>
